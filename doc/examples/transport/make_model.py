@@ -9,14 +9,14 @@ from matplotlib import pyplot as plt
 import numpy as np
 import os
 
-# Build stress package for one wel only - flow model
+#period of stress  of the well package within the gwf6 model
 def _make_wel_stress_period(gwf, wel_q, wel_coords):
     """Create stress period data for the wel package."""
     period = flopy.mf6.ModflowGwfwel.stress_period_data.empty(
         gwf,
-        maxbound=1,
+        maxbound=1, #integer value specifying the maximum number of wells cells that will be specified for use during any stress period.
     )
-    period[0][0] = (wel_coords, wel_q)
+    period[0][0] = (wel_coords, wel_q) # first period only injection
     return period
 
 # function to create the model: all the packages
@@ -57,7 +57,7 @@ def make_input(
     k33 = 0.1
 
     # constants for the initial concentration scenario
-    sconc= 10
+    sconc= 10.0
 
     # constants for dispersion package
     al = 100.00  # longitudinal dispersivity
@@ -103,12 +103,12 @@ def make_input(
     sorption = None
 
     # MF6 pumping information
-    #          (k,  i,  j),  flow,  conc
+    #          (k,  i,  j),  flow, conc
     spd_mf6 = {
-        1: [[wel_coords, wel_q, wel_c]],
-        2: [[wel_coords, wel_q, wel_c]],
-        3: [[wel_coords, wel_q, wel_c]],
-        4: [[wel_coords, wel_q, 0.0]]
+        1: [[(wel_coords), wel_q, wel_c]],
+        2: [[(wel_coords), wel_q, wel_c]],
+        3: [[(wel_coords), wel_q, wel_c]],
+        4: [[(wel_coords), wel_q, 0.0]]
     }
 
     # Instancing simulation object
@@ -448,11 +448,11 @@ def show_concentration(model_path, name, wel_coords):
     gwt = sim.get_model(gwtname)
     conc = gwt.output.concentration().get_ts(wel_coords)
     _, ax = plt.subplots()
-    ax.plot(conc[:, 0], conc[:, 1], label='Concentration')
+    ax.plot(conc[:, 0], conc[:, 1], label='Concentration at the well')
     ax.set_xlabel('Time [d]')
     ax.set_ylabel('Concentration [mg/l]')
-    y_start = 0.3
-    y_end = 1.05
+    y_start = 0
+    y_end = 10
     y_stress = (y_start, y_end)
     x_stress_1 = (1, 1)
     x_stress_2 = (11, 11)
@@ -460,8 +460,12 @@ def show_concentration(model_path, name, wel_coords):
     x = [0, 32]
     ax.set_xlim(*x)
     ax.set_ylim(y_start, y_end)
-    ax.plot(x, color='red', linestyle=':', label='Concentration range')
-    ax.plot(x, color='red', linestyle=':')
+    conc_threshold_min = 2
+    conc_threshold_max = 4
+    y1 = [conc_threshold_min, conc_threshold_min]
+    y2 = [conc_threshold_max, conc_threshold_max]
+    ax.plot(x, y1,  color='red', linestyle=':', label='Concentration Threshold')
+    ax.plot(x, y2, color='red', linestyle=':')
     ax.plot(
         x_stress_1, y_stress,
         color='lightblue', linestyle=':', label='Stress periods')
